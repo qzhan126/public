@@ -1,0 +1,569 @@
+<!DOCTYPE html>  
+<html lang="zh">  
+<head>  
+    <meta charset="UTF-8">  
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">  
+    <title>AI Trading Dashboard</title>  
+    <script src="https://cdn.tailwindcss.com"></script>  
+    <link href="https://cdn.jsdelivr.net/npm/remixicon@3.5.0/fonts/remixicon.css" rel="stylesheet">  
+    <style>  
+        :root {  
+            --primary-gradient: linear-gradient(135deg, #1a237e 0%, #0d47a1 100%);  
+            --card-gradient: linear-gradient(135deg, rgba(255,255,255,0.1) 0%, rgba(255,255,255,0.05) 100%);  
+        }  
+        
+        .glassmorphism {  
+            background: rgba(17, 25, 40, 0.75);  
+            backdrop-filter: blur(16px);  
+            border: 1px solid rgba(255, 255, 255, 0.125);  
+            box-shadow: 0 8px 32px 0 rgba(31, 38, 135, 0.37);  
+        }  
+
+        .card-hover {  
+            transition: all 0.3s ease;  
+        }  
+
+        .card-hover:hover {  
+            transform: translateY(-5px);  
+            box-shadow: 0 12px 40px 0 rgba(31, 38, 135, 0.45);  
+        }  
+
+        .gradient-text {  
+            background: linear-gradient(45deg, #2196f3, #00bcd4);  
+            -webkit-background-clip: text;  
+            -webkit-text-fill-color: transparent;  
+        }  
+
+        .animate-pulse-slow {  
+            animation: pulse 3s cubic-bezier(0.4, 0, 0.6, 1) infinite;  
+        }  
+
+        @keyframes pulse {  
+            0%, 100% {  
+                opacity: 1;  
+            }  
+            50% {  
+                opacity: .7;  
+            }  
+        }  
+
+        /* 自适应优化 */  
+        @media (max-width: 768px) {  
+            .grid-cols-2 {  
+                grid-template-columns: 1fr;  
+            }  
+            .text-2xl {  
+                font-size: 1.5rem;  
+            }  
+            .p-6 {  
+                padding: 1rem;  
+            }  
+        }  
+
+        /* 滚动条美化 */  
+        ::-webkit-scrollbar {  
+            width: 6px;  
+            height: 6px;  
+        }  
+        
+        ::-webkit-scrollbar-track {  
+            background: rgba(17, 25, 40, 0.75);  
+        }  
+        
+        ::-webkit-scrollbar-thumb {  
+            background: #3b82f6;  
+            border-radius: 3px;  
+        }  
+
+        /* 加载动画 */  
+        .loader {  
+            border: 3px solid rgba(59, 130, 246, 0.3);  
+            border-radius: 50%;  
+            border-top: 3px solid #3b82f6;  
+            width: 24px;  
+            height: 24px;  
+            animation: spin 1s linear infinite;  
+        }  
+
+        @keyframes spin {  
+            0% { transform: rotate(0deg); }  
+            100% { transform: rotate(360deg); }  
+        }  
+
+        /* 数据卡片渐变背景 */  
+        .data-card {  
+            background: linear-gradient(135deg, rgba(59, 130, 246, 0.1) 0%, rgba(37, 99, 235, 0.1) 100%);  
+        }  
+    </style>  
+</head>
+<body class="bg-gradient-to-br from-gray-900 via-gray-800 to-gray-900 text-gray-100 min-h-screen">  
+    <div class="max-w-7xl mx-auto p-4">  
+        <!-- 顶部导航 -->  
+        <nav class="glassmorphism rounded-xl mb-6 p-4 lg:p-6">  
+            <div class="flex justify-between items-center">  
+                <div class="flex items-center space-x-3">  
+                    <i class="ri-ai-generate text-2xl lg:text-3xl text-blue-400"></i>  
+                    <h1 class="text-xl lg:text-2xl font-bold gradient-text">AI 智能交易分析系统</h1>  
+                </div>  
+                <div class="flex items-center space-x-4">  
+                    <i class="ri-time-line text-blue-400"></i>  
+                    <span class="text-gray-300 animate-pulse-slow" id="currentTime">--</span>  
+                </div>  
+            </div>  
+        </nav>  
+
+        <!-- 搜索栏 -->  
+        <div class="glassmorphism rounded-xl p-4 lg:p-6 mb-6">  
+            <div class="flex flex-col sm:flex-row space-y-4 sm:space-y-0 sm:space-x-4">  
+                <div class="relative flex-1">  
+                    <i class="ri-search-line absolute left-3 top-3 text-gray-400"></i>  
+                    <input type="text"  
+                           id="stockCode"  
+                           class="w-full pl-10 pr-4 py-2 bg-gray-800 border border-gray-700 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-gray-100"  
+                           placeholder="请输入股票代码"  
+                           maxlength="6"  
+                           pattern="\d*">  
+                </div>  
+                <button onclick="fetchStockData()"  
+                        class="px-8 py-2 bg-gradient-to-r from-blue-500 to-blue-700 text-white rounded-lg hover:from-blue-600 hover:to-blue-800 focus:outline-none focus:ring-2 focus:ring-blue-500 transition-all duration-300 flex items-center justify-center space-x-2">  
+                    <i class="ri-search-eye-line"></i>  
+                    <span>分析</span>  
+                </button>  
+            </div>  
+            <div id="errorMsg" class="mt-2 text-red-400 text-sm hidden"></div>  
+        </div>  
+
+        <!-- 加载动画 -->  
+        <div id="loading" class="hidden">  
+            <div class="flex justify-center items-center p-8">  
+                <div class="loader"></div>  
+            </div>  
+        </div>  
+
+        <!-- 主要内容区域 -->  
+        <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">  
+            <!-- 左侧面板 -->  
+            <div class="space-y-6">  
+                <!-- 基本信息 -->  
+                <div id="basicInfo" class="glassmorphism rounded-xl p-4 lg:p-6 card-hover hidden">  
+                    <div class="flex items-center space-x-2 mb-4">  
+                        <i class="ri-stock-line text-xl text-blue-400"></i>  
+                        <h2 class="text-xl font-bold text-gray-100" id="stockTitle">--</h2>  
+                    </div>  
+                    <div class="grid grid-cols-2 gap-4">  
+                        <div class="data-card p-4 rounded-lg">  
+                            <div class="flex items-center justify-between">  
+                                <div class="text-sm text-gray-400">最新价格</div>  
+                                <i class="ri-money-cny-circle-line text-blue-400"></i>  
+                            </div>  
+                            <div id="currentPrice" class="text-lg font-bold text-blue-400 mt-2">--</div>  
+                        </div>  
+                        <div class="data-card p-4 rounded-lg">  
+                            <div class="flex items-center justify-between">  
+                                <div class="text-sm text-gray-400">预测方向</div>  
+                                <i class="ri-arrow-up-down-line text-blue-400"></i>  
+                            </div>  
+                            <div id="prediction" class="text-lg font-bold mt-2">--</div>  
+                        </div>  
+                    </div>  
+                </div>  
+
+                <!-- 最新交易信号 -->  
+                <div id="latestSignal" class="glassmorphism rounded-xl p-4 lg:p-6 card-hover hidden">  
+                    <div class="flex items-center space-x-2 mb-4">  
+                        <i class="ri-notification-4-line text-xl text-blue-400"></i>  
+                        <h2 class="text-lg font-semibold text-gray-100">最新信号</h2>  
+                    </div>  
+                    <div class="space-y-4">  
+                        <div class="data-card p-4 rounded-lg">  
+                            <div class="flex justify-between items-center">  
+                                <span class="text-gray-400">信号日期</span>  
+                                <span id="signalDate" class="font-medium">--</span>  
+                            </div>  
+                        </div>  
+                        <div class="data-card p-4 rounded-lg">  
+                            <div class="flex justify-between items-center">  
+                                <span class="text-gray-400">信号概率</span>  
+                                <span id="probability" class="font-medium">--</span>  
+                            </div>  
+                        </div>  
+                        
+                    </div>  
+                </div>  
+            </div>
+			            <!-- 右侧面板 -->  
+            <div class="space-y-6">  
+                <!-- 技术分析 -->  
+                <div id="technicalAnalysis" class="glassmorphism rounded-xl p-4 lg:p-6 card-hover hidden">  
+                    <div class="flex items-center space-x-2 mb-4">  
+                        <i class="ri-line-chart-line text-xl text-blue-400"></i>  
+                        <h2 class="text-lg font-semibold text-gray-100">技术分析详情</h2>  
+                    </div>  
+                    
+                    <!-- 趋势强度 -->  
+                    <div class="mb-6">  
+                        <h3 class="text-md font-medium text-gray-400 mb-3">趋势强度</h3>  
+                        <div class="grid grid-cols-3 gap-3">  
+                            <div class="data-card p-3 rounded-lg">  
+                                <div class="text-sm text-gray-400">短期</div>  
+                                <div id="shortTerm" class="font-bold text-lg mt-1">--</div>  
+                            </div>  
+                            <div class="data-card p-3 rounded-lg">  
+                                <div class="text-sm text-gray-400">中期</div>  
+                                <div id="mediumTerm" class="font-bold text-lg mt-1">--</div>  
+                            </div>  
+                            <div class="data-card p-3 rounded-lg">  
+                                <div class="text-sm text-gray-400">长期</div>  
+                                <div id="longTerm" class="font-bold text-lg mt-1">--</div>  
+                            </div>  
+                        </div>  
+                    </div>  
+
+                    <!-- 趋势方向 -->  
+                    <div class="mb-6">  
+                        <h3 class="text-md font-medium text-gray-400 mb-3">趋势方向</h3>  
+                        <div class="grid grid-cols-3 gap-3">  
+                            <div class="data-card p-3 rounded-lg">  
+                                <div class="text-sm text-gray-400">短期</div>  
+                                <div id="shortTermDir" class="font-bold text-sm mt-1">--</div>  
+                            </div>  
+                            <div class="data-card p-3 rounded-lg">  
+                                <div class="text-sm text-gray-400">中期</div>  
+                                <div id="mediumTermDir" class="font-bold text-sm mt-1">--</div>  
+                            </div>  
+                            <div class="data-card p-3 rounded-lg">  
+                                <div class="text-sm text-gray-400">长期</div>  
+                                <div id="longTermDir" class="font-bold text-sm mt-1">--</div>  
+                            </div>  
+                        </div>  
+                    </div>  
+
+                    <!-- 技术指标 -->  
+                    <div class="mb-6">  
+                        <h3 class="text-md font-medium text-gray-400 mb-3">关键指标</h3>  
+                        <div class="grid grid-cols-2 gap-4">  
+                            <div class="data-card p-3 rounded-lg">  
+                                <div class="flex justify-between items-center">  
+                                    <span class="text-gray-400">RSI</span>  
+                                    <span id="rsiValue" class="font-medium">--</span>  
+                                </div>  
+                            </div>  
+                            <div class="data-card p-3 rounded-lg">  
+                                <div class="flex justify-between items-center">  
+                                    <span class="text-gray-400">布林带位置</span>  
+                                    <span id="bollPosition" class="font-medium">--</span>  
+                                </div>  
+                            </div>  
+                            <div class="data-card p-3 rounded-lg">  
+                                <div class="flex justify-between items-center">  
+                                    <span class="text-gray-400">MACD</span>  
+                                    <span id="macdValue" class="font-medium">--</span>  
+                                </div>  
+                            </div>  
+                            <div class="data-card p-3 rounded-lg">  
+                                <div class="flex justify-between items-center">  
+                                    <span class="text-gray-400">Signal</span>  
+                                    <span id="macdSignal" class="font-medium">--</span>  
+                                </div>  
+                            </div>  
+                        </div>  
+                    </div>  
+
+                    <!-- 风险评估 -->  
+                    <div class="mb-4">  
+                        <h3 class="text-md font-medium text-gray-400 mb-3">风险评估</h3>  
+                        <div class="grid grid-cols-2 gap-4">  
+                            <div class="data-card p-3 rounded-lg">  
+                                <div class="flex justify-between items-center">  
+                                    <span class="text-gray-400">风险分数</span>  
+                                    <span id="riskScore" class="font-medium">--</span>  
+                                </div>  
+                            </div>  
+                            <div class="data-card p-3 rounded-lg">  
+                                <div class="flex justify-between items-center">  
+                                    <span class="text-gray-400">买入评分</span>  
+                                    <span id="buyScore" class="font-medium">--</span>  
+                                </div>  
+                            </div>  
+                        </div>  
+                    </div>  
+                </div>  
+
+                <!-- 市场建议 -->  
+                <div id="marketAdvice" class="glassmorphism rounded-xl p-4 lg:p-6 card-hover hidden">  
+                    <div class="flex items-center space-x-2 mb-4">  
+                        <i class="ri-lightbulb-flash-line text-xl text-blue-400"></i>  
+                        <h2 class="text-lg font-semibold text-gray-100">市场建议</h2>  
+                    </div>  
+                    <div class="space-y-4">  
+                        <div class="data-card p-4 rounded-lg">  
+                            <div class="flex items-center space-x-2">  
+                                <span class="text-gray-400">市场偏向：</span>  
+                                <span id="marketBias" class="px-3 py-1 rounded-full text-sm bg-opacity-20">--</span>  
+                            </div>  
+                        </div>  
+                        <div class="data-card p-4 rounded-lg">  
+                            <div class="flex items-center space-x-2">  
+                                <span class="text-gray-400">风险等级：</span>  
+                                <span id="riskLevel" class="px-3 py-1 rounded-full text-sm bg-opacity-20">--</span>  
+                            </div>  
+                        </div>  
+                        <div class="data-card p-4 rounded-lg">  
+                            <p id="tradingAdvice" class="text-gray-300 text-sm">--</p>  
+                        </div>  
+                    </div>  
+                </div>  
+            </div>  
+        </div>  
+    </div>
+	<script>  
+// 工具函数  
+function formatPercentage(value) {  
+    return (value * 100).toFixed(2) + '%';  
+}  
+
+function formatPrice(price) {  
+    return '¥' + price.toFixed(2);  
+}  
+
+function formatDate(dateString) {  
+    const date = new Date(dateString);  
+    return date.toLocaleString('zh-CN', {  
+        year: 'numeric',  
+        month: '2-digit',  
+        day: '2-digit',  
+        hour: '2-digit',  
+        minute: '2-digit',  
+        second: '2-digit',  
+        hour12: false  
+    });  
+}  
+
+// 更新当前时间  
+function updateCurrentTime() {  
+    const now = new Date();  
+    const timeStr = now.toLocaleTimeString('zh-CN', {   
+        hour12: false,  
+        hour: '2-digit',  
+        minute: '2-digit',  
+        second: '2-digit'  
+    });  
+    document.getElementById('currentTime').textContent = timeStr;  
+}  
+
+// 每秒更新时间  
+setInterval(updateCurrentTime, 1000);  
+updateCurrentTime();  
+
+// 显示/隐藏数据容器  
+function toggleDataContainers(show) {  
+    const containers = [  
+        'basicInfo',  
+        'latestSignal',  
+        'technicalAnalysis',  
+        'marketAdvice'  
+    ];  
+    
+    containers.forEach(id => {  
+        const element = document.getElementById(id);  
+        if (element) {  
+            element.classList.toggle('hidden', !show);  
+        }  
+    });  
+}  
+
+// 更新UI显示  
+function updateUI(data) {  
+    const aiTrading = data.data.ai_trading;  
+    const latestSignal = aiTrading.signals[aiTrading.signals.length - 1];  
+    const buyAnalysis = aiTrading.buy_analysis;  
+    const recommendations = aiTrading.recommendations;  
+
+    // 更新基本信息  
+    document.getElementById('stockTitle').textContent = data.data.stock_code;  
+    document.getElementById('currentPrice').textContent = formatPrice(latestSignal.price);  
+    document.getElementById('prediction').textContent = latestSignal.prediction === 1 ? '看涨' : '看跌';  
+    document.getElementById('prediction').className = `text-lg font-bold mt-2 ${latestSignal.prediction === 1 ? 'text-green-400' : 'text-red-400'}`;  
+
+    // 更新最新交易信号  
+    document.getElementById('signalDate').textContent = formatDate(latestSignal.date);  
+    document.getElementById('probability').textContent = formatPercentage(latestSignal.probability);  
+    
+   
+
+    // 更新技术分析  
+    document.getElementById('shortTerm').textContent = formatPercentage(buyAnalysis.trend_strength.short_term);  
+    document.getElementById('mediumTerm').textContent = formatPercentage(buyAnalysis.trend_strength.medium_term);  
+    document.getElementById('longTerm').textContent = formatPercentage(buyAnalysis.trend_strength.long_term);  
+
+    document.getElementById('shortTermDir').textContent = buyAnalysis.trend_direction.short_term;  
+    document.getElementById('mediumTermDir').textContent = buyAnalysis.trend_direction.medium_term;  
+    document.getElementById('longTermDir').textContent = buyAnalysis.trend_direction.long_term;  
+
+    document.getElementById('rsiValue').textContent = buyAnalysis.latest_indicators.rsi.toFixed(2);  
+    document.getElementById('bollPosition').textContent = buyAnalysis.latest_indicators.bollinger.position.toFixed(2);  
+    document.getElementById('macdValue').textContent = buyAnalysis.latest_indicators.macd.macd.toFixed(4);  
+    document.getElementById('macdSignal').textContent = buyAnalysis.latest_indicators.macd.signal.toFixed(4);  
+
+    document.getElementById('riskScore').textContent = buyAnalysis.risk_score.toFixed(2);  
+    document.getElementById('buyScore').textContent = formatPercentage(buyAnalysis.buy_score);  
+
+    // 更新市场建议  
+    const marketBiasElement = document.getElementById('marketBias');  
+    marketBiasElement.textContent = recommendations.overall_market_bias === 'BULLISH' ? '看涨' : '看跌';  
+    marketBiasElement.className = `px-3 py-1 rounded-full text-sm ${  
+        recommendations.overall_market_bias === 'BULLISH'   
+            ? 'bg-green-500 bg-opacity-20 text-green-400'   
+            : 'bg-red-500 bg-opacity-20 text-red-400'  
+    }`;  
+
+    const riskLevelElement = document.getElementById('riskLevel');  
+    riskLevelElement.textContent = recommendations.risk_level === 'HIGH' ? '高风险' : '低风险';  
+    riskLevelElement.className = `px-3 py-1 rounded-full text-sm ${  
+        recommendations.risk_level === 'HIGH'  
+            ? 'bg-red-500 bg-opacity-20 text-red-400'  
+            : 'bg-green-500 bg-opacity-20 text-green-400'  
+    }`;  
+	report = generateMarketAnalysis(data)
+    document.getElementById('tradingAdvice').textContent = report;  
+}  
+function generateMarketAnalysis(data) {  
+    const aiTrading = data.data.ai_trading;  
+    const buyAnalysis = aiTrading.buy_analysis;  
+    const indicators = buyAnalysis.latest_indicators;  
+    const latestSignal = aiTrading.signals[aiTrading.signals.length - 1];  
+    
+    // 计算近期价格变化  
+    const priceChange = ((latestSignal.price - aiTrading.signals[0].price) / aiTrading.signals[0].price * 100).toFixed(2);  
+    
+    // 分析趋势强度和方向  
+    function getTrendStrengthDesc(strength) {  
+        if (strength >= 0.7) return "强";  
+        if (strength >= 0.4) return "中等";  
+        return "弱";  
+    }  
+
+    // 分析MACD  
+    const macd = indicators.macd;  
+    const macdAnalysis = macd.histogram > 0   
+        ? `MACD柱状图为正(${macd.histogram.toFixed(4)})，显示上涨动能`   
+        : `MACD柱状图为负(${macd.histogram.toFixed(4)})，显示下跌压力`;  
+
+    // 分析RSI  
+    function getRsiAnalysis(rsi) {  
+        if (rsi > 70) return "RSI处于超买区间，注意回调风险";  
+        if (rsi < 30) return "RSI处于超卖区间，可能存在反弹机会";  
+        if (rsi > 60) return "RSI偏强，上涨趋势健康";  
+        if (rsi < 40) return "RSI偏弱，下跌趋势明显";  
+        return "RSI处于中性区间，市场震荡";  
+    }  
+
+    // 分析布林带  
+    const boll = indicators.bollinger;  
+    function getBollAnalysis(boll) {  
+        if (boll.position > 1) return "股价突破布林带上轨，注意回调风险";  
+        if (boll.position < 0) return "股价跌破布林带下轨，可能超卖";  
+        if (boll.position > 0.5) return "股价位于布林带上部，走势偏强";  
+        if (boll.position < -0.5) return "股价位于布林带下部，走势偏弱";  
+        return "股价在布林带中轨附近，趋势不明确";  
+    }  
+
+    // 生成支撑压力位  
+    const support = boll.lower.toFixed(2);  
+    const resistance = boll.upper.toFixed(2);  
+
+    // 生成市场分析文本  
+    const analysis = `  
+市场分析报告 - ${data.data.stock_code}  
+------------------------  
+最新价格：${latestSignal.price}元 (${priceChange}%)  
+
+趋势分析：  
+短期：${getTrendStrengthDesc(buyAnalysis.trend_strength.short_term)}势${buyAnalysis.trend_direction.short_term}  
+中期：${getTrendStrengthDesc(buyAnalysis.trend_strength.medium_term)}势${buyAnalysis.trend_direction.medium_term}  
+长期：${getTrendStrengthDesc(buyAnalysis.trend_strength.long_term)}势${buyAnalysis.trend_direction.long_term}  
+
+技术指标：  
+1. ${macdAnalysis}  
+2. ${getRsiAnalysis(indicators.rsi)}  
+3. ${getBollAnalysis(boll)}  
+
+关键价位：  
+- 压力位：${resistance}  
+- 支撑位：${support}  
+
+风险评估：  
+- 风险等级：${buyAnalysis.risk_score > 3 ? "高风险" : "低风险"} (${buyAnalysis.risk_score.toFixed(2)})  
+- 买入评分：${(buyAnalysis.buy_score * 100).toFixed(2)}%  
+
+操作建议：  
+${aiTrading.recommendations.trading_advice}  
+
+要点提示：  
+1. ${buyAnalysis.risk_score > 3 ? "注意控制仓位，严格执行止损" : "风险相对可控，可以适度参与"}  
+2. ${indicators.rsi > 70 || boll.position > 1 ? "当前位置存在回调风险" : indicators.rsi < 30 || boll.position < 0 ? "当前位置可能存在反弹机会" : "维持震荡，耐心等待机会"}  
+3. ${buyAnalysis.buy_score > 0.6 ? "可以考虑逢低买入" : buyAnalysis.buy_score < 0.4 ? "建议观望为主" : "可以少量试探性建仓"}  
+
+补充说明：  
+- 均线系统：${Object.entries(indicators.ma_status).some(([key, value]) => value > latestSignal.price) ? "部分均线形成压力" : "均线系统支撑明显"}  
+- 成交特点：${macd.histogram > 0 && indicators.rsi > 50 ? "量价配合良好" : "量能需要进一步确认"}  
+`;  
+
+    return analysis.trim();  
+}
+// 获取股票数据  
+async function fetchStockData() {  
+    const stockCode = document.getElementById('stockCode').value.trim();  
+    const errorMsg = document.getElementById('errorMsg');  
+    const loading = document.getElementById('loading');  
+    
+    // 验证股票代码  
+    if (!/^\d{6}$/.test(stockCode)) {  
+        errorMsg.textContent = '请输入6位数字的股票代码';  
+        errorMsg.classList.remove('hidden');  
+        return;  
+    }  
+
+    // 重置错误信息  
+    errorMsg.classList.add('hidden');  
+    
+    // 显示加载动画，隐藏数据  
+    loading.classList.remove('hidden');  
+    toggleDataContainers(false);  
+
+    try {  
+        const response = await fetch(`http://96.30.195.120:8090/api/analysis/${stockCode}`, {  
+            headers: {  
+                'authorization': 'Bearer cde8b5e13b6ac26fd7a04e2c11f2ca28adac9cc9ed52366ba8da1b8e9be4fa8d'  
+            }  
+        });  
+
+        if (!response.ok) {  
+            throw new Error('网络请求失败');  
+        }  
+
+        const data = await response.json();  
+        
+        if (data.success) {  
+            updateUI(data);  
+            toggleDataContainers(true);  
+        } else {  
+            throw new Error('数据获取失败');  
+        }  
+    } catch (error) {  
+        errorMsg.textContent = error.message;  
+        errorMsg.classList.remove('hidden');  
+    } finally {  
+        loading.classList.add('hidden');  
+    }  
+}  
+
+// 添加输入框回车事件监听  
+document.getElementById('stockCode').addEventListener('keypress', function(e) {  
+    if (e.key === 'Enter') {  
+        fetchStockData();  
+    }  
+});  
+</script>  
+</body>  
+</html>
