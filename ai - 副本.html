@@ -187,47 +187,12 @@
                                 <span id="probability" class="font-medium">--</span>  
                             </div>  
                         </div>  
-                        <div class="data-card p-4 rounded-lg">  
-                            <div class="flex justify-between items-center">  
-                                <span class="text-gray-400">当前模型日期</span>  
-                                <span id="modeldate" class="font-medium">--</span>  
-                            </div>  
-                        </div>  
+                        
                     </div>  
                 </div>  
-					<div id="recommendedStocks" class="glassmorphism rounded-xl p-4 lg:p-6 card-hover hidden">  
-				<div class="flex items-center justify-between mb-4">  
-					<div class="flex items-center space-x-2">  
-						<i class="ri-star-line text-xl text-blue-400"></i>  
-						<h2 class="text-lg font-semibold text-gray-100">今日推荐</h2>  
-					</div>  
-					<div class="text-sm text-gray-400">  
-						<span id="recommendDate">--</span>  
-					</div>  
-				</div>  
-				<div class="space-y-3" id="recommendList">  
-					<!-- 推荐股票将通过 JavaScript 动态插入 -->  
-				</div> 
-				<div class="max-w-7xl mx-auto p-4 mt-8">  
-					<div class="glassmorphism rounded-xl p-4 lg:p-6">  
-						<div class="flex items-center space-x-2 mb-3">  
-							<i class="ri-information-line text-xl text-yellow-400"></i>  
-							<h2 class="text-lg font-semibold text-gray-100">免责声明</h2>  
-						</div>  
-						<div class="text-sm text-gray-400 space-y-2 leading-relaxed">  
-							<p>1. 本系统提供的所有信息和数据仅供参考，不构成任何投资建议或交易指导。</p>  
-							<p>2. AI分析结果基于历史数据和算法模型，不能保证对未来市场走势的准确预测。</p>  
-							<p>3. 投资者应当对本系统提供的信息进行独立判断，依据自身的投资目标、风险偏好和资金状况做出投资决策。</p>  
-							<p>4. 股市有风险，投资需谨慎。市场瞬息万变，任何投资决策都可能带来收益或损失。</p>  
-							<p>5. 使用本系统即表示您已完全理解并接受以上声明，并愿意承担因使用本系统信息而产生的所有风险和后果。</p>  
-						</div>  
-					</div>  
-				</div>  				
-			</div>  
             </div>
 			            <!-- 右侧面板 -->  
             <div class="space-y-6">  
-			
                 <!-- 技术分析 -->  
                 <div id="technicalAnalysis" class="glassmorphism rounded-xl p-4 lg:p-6 card-hover hidden">  
                     <div class="flex items-center space-x-2 mb-4">  
@@ -346,10 +311,8 @@
                     </div>  
                 </div>  
             </div>  
-    
-		</div>  
-    
-	</div>
+        </div>  
+    </div>
 	<script>  
 // 工具函数  
 function formatPercentage(value) {  
@@ -422,8 +385,7 @@ function updateUI(data) {
     // 更新最新交易信号  
     document.getElementById('signalDate').textContent = formatDate(latestSignal.date);  
     document.getElementById('probability').textContent = formatPercentage(latestSignal.probability);  
-    document.getElementById('modeldate').textContent = data.data.model_date;  
-
+    
    
 
     // 更新技术分析  
@@ -459,78 +421,9 @@ function updateUI(data) {
             ? 'bg-red-500 bg-opacity-20 text-red-400'  
             : 'bg-green-500 bg-opacity-20 text-green-400'  
     }`;  
-	updateRecommendedStocks(data);
 	report = generateMarketAnalysis(data)
     document.getElementById('tradingAdvice').textContent = report;  
-} 
-function updateRecommendedStocks(data) {  
-    const recommendList = document.getElementById('recommendList');  
-    const recommendDate = document.getElementById('recommendDate');  
-    recommendList.innerHTML = ''; // 清空现有内容  
-
-    // 显示推荐面板  
-    document.getElementById('recommendedStocks').classList.remove('hidden');  
-    
-    // 更新推荐日期  
-    recommendDate.textContent = data.data.predictor_date || '--';  
-
-    // 处理推荐股票  
-    if (data.data.today_choose && data.data.today_choose.length > 0) {  
-        data.data.today_choose.forEach(stock => {  
-            const stockElement = document.createElement('div');  
-            stockElement.className = 'data-card p-4 rounded-lg hover:bg-gray-800 transition-all duration-300 cursor-pointer';  
-            stockElement.innerHTML = `  
-                <div class="flex items-center justify-between">  
-                    <div class="flex items-center space-x-3">  
-                        <div class="w-10 h-10 rounded-full bg-blue-500/20 flex items-center justify-center">  
-                            <i class="ri-stock-line text-blue-400"></i>  
-                        </div>  
-                        <div>  
-                            <div class="text-sm font-medium text-gray-100">${stock.code}</div>  
-                            <div class="text-xs text-gray-400">点击查看详情</div>  
-                        </div>  
-                    </div>  
-                    <div class="flex items-center space-x-2">  
-                        <i class="ri-arrow-right-line text-gray-400"></i>  
-                    </div>  
-                </div>  
-            `;  
-            
-            // 添加点击事件  
-            stockElement.addEventListener('click', () => {  
-                document.getElementById('stockCode').value = stock.code;  
-                fetchStockData();  
-            });  
-            
-            recommendList.appendChild(stockElement);  
-        });  
-    } else {  
-        recommendList.innerHTML = `  
-            <div class="text-center text-gray-400 py-4">  
-                暂无推荐股票  
-            </div>  
-        `;  
-    }  
 }  
-
-// 在原有的 fetchStockData 函数中调用  
-async function fetchStockData() {  
-    // ... 原有代码 ...  
-    
-    try {  
-        const response = await fetch(`/api/stock/${stockCode}`);  
-        const data = await response.json();  
-        
-        if (data.success) {  
-            updateBasicInfo(data);  
-            updateTechnicalAnalysis(data);  
-            updateMarketAdvice(data);  
-            updateRecommendedStocks(data);  
-        }  
-    } catch (error) {  
-        // ... 错误处理 ...  
-    }  
-} 
 function generateMarketAnalysis(data) {  
     const {  
         data: {  
@@ -655,7 +548,20 @@ ${maAnalysis.join('\n')}
 - 市场偏向：${recommendations.overall_market_bias}  
 - 风险等级：${recommendations.risk_level}  
 
+持仓状况：  
+- 当前持仓：${current_position.in_position ? "是" : "否"}  
+${current_position.in_position ? `- 入场价格：${current_position.entry_price}  
+- 持仓天数：${current_position.days_held}  
+- 当前收益：${current_position.current_profit}` : ""}  
 
+交易统计：  
+- 总信号数：${statistics.total_signals}  
+- 买入信号：${statistics.buy_signals}  
+- 卖出信号：${statistics.sell_signals}  
+- 高置信度信号：${statistics.high_confidence_signals}  
+- 完成交易：${statistics.completed_trades}  
+- 平均收益：${statistics.average_return}%  
+- 胜率：${statistics.win_rate}%  
 
 操作建议：  
 ${recommendations.trading_advice}  
