@@ -187,12 +187,47 @@
                                 <span id="probability" class="font-medium">--</span>  
                             </div>  
                         </div>  
-                        
+                        <div class="data-card p-4 rounded-lg">  
+                            <div class="flex justify-between items-center">  
+                                <span class="text-gray-400">当前模型日期</span>  
+                                <span id="modeldate" class="font-medium">--</span>  
+                            </div>  
+                        </div>  
                     </div>  
                 </div>  
+					<div id="recommendedStocks" class="glassmorphism rounded-xl p-4 lg:p-6 card-hover hidden">  
+				<div class="flex items-center justify-between mb-4">  
+					<div class="flex items-center space-x-2">  
+						<i class="ri-star-line text-xl text-blue-400"></i>  
+						<h2 class="text-lg font-semibold text-gray-100">今日推荐</h2>  
+					</div>  
+					<div class="text-sm text-gray-400">  
+						<span id="recommendDate">--</span>  
+					</div>  
+				</div>  
+				<div class="space-y-3" id="recommendList">  
+					<!-- 推荐股票将通过 JavaScript 动态插入 -->  
+				</div> 
+				<div class="max-w-7xl mx-auto p-4 mt-8">  
+					<div class="glassmorphism rounded-xl p-4 lg:p-6">  
+						<div class="flex items-center space-x-2 mb-3">  
+							<i class="ri-information-line text-xl text-yellow-400"></i>  
+							<h2 class="text-lg font-semibold text-gray-100">免责声明</h2>  
+						</div>  
+						<div class="text-sm text-gray-400 space-y-2 leading-relaxed">  
+							<p>1. 本系统提供的所有信息和数据仅供参考，不构成任何投资建议或交易指导。</p>  
+							<p>2. AI分析结果基于历史数据和算法模型，不能保证对未来市场走势的准确预测。</p>  
+							<p>3. 投资者应当对本系统提供的信息进行独立判断，依据自身的投资目标、风险偏好和资金状况做出投资决策。</p>  
+							<p>4. 股市有风险，投资需谨慎。市场瞬息万变，任何投资决策都可能带来收益或损失。</p>  
+							<p>5. 使用本系统即表示您已完全理解并接受以上声明，并愿意承担因使用本系统信息而产生的所有风险和后果。</p>  
+						</div>  
+					</div>  
+				</div>  				
+			</div>  
             </div>
 			            <!-- 右侧面板 -->  
             <div class="space-y-6">  
+			
                 <!-- 技术分析 -->  
                 <div id="technicalAnalysis" class="glassmorphism rounded-xl p-4 lg:p-6 card-hover hidden">  
                     <div class="flex items-center space-x-2 mb-4">  
@@ -295,27 +330,26 @@
                         <i class="ri-lightbulb-flash-line text-xl text-blue-400"></i>  
                         <h2 class="text-lg font-semibold text-gray-100">市场建议</h2>  
                     </div>  
-                    <div class="space-y-4">  
-                        <div class="data-card p-4 rounded-lg">  
-                            <div class="flex items-center space-x-2">  
-                                <span class="text-gray-400">市场偏向：</span>  
-                                <span id="marketBias" class="px-3 py-1 rounded-full text-sm bg-opacity-20">--</span>  
-                            </div>  
-                        </div>  
+                    <div class="space-y-4">   
                         <div class="data-card p-4 rounded-lg">  
                             <div class="flex items-center space-x-2">  
                                 <span class="text-gray-400">风险等级：</span>  
                                 <span id="riskLevel" class="px-3 py-1 rounded-full text-sm bg-opacity-20">--</span>  
                             </div>  
                         </div>  
-                        <div class="data-card p-4 rounded-lg">  
-                            <p id="tradingAdvice" class="text-gray-300 text-sm">--</p>  
-                        </div>  
+                        <div class="bg-gray-800 border border-gray-700 shadow-lg rounded-xl p-6 hover:shadow-xl transition-shadow duration-300">  
+							<p id="tradingAdvice" class="text-gray-300 text-sm leading-relaxed tracking-wide">  
+								<!-- 使用 em dash 而不是两个连字符 -->  
+								—  
+							</p>  
+						</div> 
                     </div>  
                 </div>  
             </div>  
-        </div>  
-    </div>
+    
+		</div>  
+    
+	</div>
 	<script>  
 // 工具函数  
 function formatPercentage(value) {  
@@ -380,7 +414,7 @@ function updateUI(data) {
     const recommendations = aiTrading.recommendations;  
 
     // 更新基本信息  
-    document.getElementById('stockTitle').textContent = data.data.stock_code;  
+    document.getElementById('stockTitle').textContent = `${data.data.stock_code}-${data.data.stock_name}`;  
     document.getElementById('currentPrice').textContent = formatPrice(latestSignal.price);  
     document.getElementById('prediction').textContent = latestSignal.prediction === 1 ? '看涨' : '看跌';  
     document.getElementById('prediction').className = `text-lg font-bold mt-2 ${latestSignal.prediction === 1 ? 'text-green-400' : 'text-red-400'}`;  
@@ -388,7 +422,8 @@ function updateUI(data) {
     // 更新最新交易信号  
     document.getElementById('signalDate').textContent = formatDate(latestSignal.date);  
     document.getElementById('probability').textContent = formatPercentage(latestSignal.probability);  
-    
+    document.getElementById('modeldate').textContent = data.data.model_date;  
+
    
 
     // 更新技术分析  
@@ -409,13 +444,13 @@ function updateUI(data) {
     document.getElementById('buyScore').textContent = formatPercentage(buyAnalysis.buy_score);  
 
     // 更新市场建议  
-    const marketBiasElement = document.getElementById('marketBias');  
-    marketBiasElement.textContent = recommendations.overall_market_bias === 'BULLISH' ? '看涨' : '看跌';  
-    marketBiasElement.className = `px-3 py-1 rounded-full text-sm ${  
-        recommendations.overall_market_bias === 'BULLISH'   
-            ? 'bg-green-500 bg-opacity-20 text-green-400'   
-            : 'bg-red-500 bg-opacity-20 text-red-400'  
-    }`;  
+    //const marketBiasElement = document.getElementById('marketBias');  
+    //marketBiasElement.textContent = recommendations.overall_market_bias === 'BULLISH' ? '看涨' : '看跌';  
+    //marketBiasElement.className = `px-3 py-1 rounded-full text-sm ${  
+     //   recommendations.overall_market_bias === 'BULLISH'   
+      //      ? 'bg-green-500 bg-opacity-20 text-green-400'   
+      //      : 'bg-red-500 bg-opacity-20 text-red-400'  
+    //}`;  
 
     const riskLevelElement = document.getElementById('riskLevel');  
     riskLevelElement.textContent = recommendations.risk_level === 'HIGH' ? '高风险' : '低风险';  
@@ -424,92 +459,235 @@ function updateUI(data) {
             ? 'bg-red-500 bg-opacity-20 text-red-400'  
             : 'bg-green-500 bg-opacity-20 text-green-400'  
     }`;  
+	updateRecommendedStocks(data);
 	report = generateMarketAnalysis(data)
     document.getElementById('tradingAdvice').textContent = report;  
+} 
+function updateRecommendedStocks(data) {  
+    const recommendList = document.getElementById('recommendList');  
+    const recommendDate = document.getElementById('recommendDate');  
+    recommendList.innerHTML = ''; // 清空现有内容  
+
+    // 显示推荐面板  
+    document.getElementById('recommendedStocks').classList.remove('hidden');  
+    
+    // 更新推荐日期  
+    recommendDate.textContent = data.data.predictor_date || '--';  
+
+    // 处理推荐股票  
+    if (data.data.today_choose && data.data.today_choose.length > 0) {  
+        data.data.today_choose.forEach(stock => {  
+            const stockElement = document.createElement('div');  
+            stockElement.className = 'data-card p-4 rounded-lg hover:bg-gray-800 transition-all duration-300 cursor-pointer';  
+            stockElement.innerHTML = `  
+                <div class="flex items-center justify-between">  
+                    <div class="flex items-center space-x-3">  
+                        <div class="w-10 h-10 rounded-full bg-blue-500/20 flex items-center justify-center">  
+                            <i class="ri-stock-line text-blue-400"></i>  
+                        </div>  
+                        <div>  
+                            <div class="text-sm font-medium text-gray-100">${stock.code}</div>  
+                            <div class="text-xs text-gray-400">点击查看详情</div>  
+                        </div>  
+                    </div>  
+                    <div class="flex items-center space-x-2">  
+                        <i class="ri-arrow-right-line text-gray-400"></i>  
+                    </div>  
+                </div>  
+            `;  
+            
+            // 添加点击事件  
+            stockElement.addEventListener('click', () => {  
+                document.getElementById('stockCode').value = stock.code;  
+                fetchStockData();  
+            });  
+            
+            recommendList.appendChild(stockElement);  
+        });  
+    } else {  
+        recommendList.innerHTML = `  
+            <div class="text-center text-gray-400 py-4">  
+                暂无推荐股票  
+            </div>  
+        `;  
+    }  
 }  
+
+// 在原有的 fetchStockData 函数中调用  
+async function fetchStockData() {  
+    // ... 原有代码 ...  
+    
+    try {  
+        const response = await fetch(`/api/stock/${stockCode}`);  
+        const data = await response.json();  
+        
+        if (data.success) {  
+            updateBasicInfo(data);  
+            updateTechnicalAnalysis(data);  
+            updateMarketAdvice(data);  
+            updateRecommendedStocks(data);  
+        }  
+    } catch (error) {  
+        // ... 错误处理 ...  
+    }  
+} 
 function generateMarketAnalysis(data) {  
-    const aiTrading = data.data.ai_trading;  
-    const buyAnalysis = aiTrading.buy_analysis;  
-    const indicators = buyAnalysis.latest_indicators;  
-    const latestSignal = aiTrading.signals[aiTrading.signals.length - 1];  
+    const {  
+        data: {  
+            stock_code,  
+            stock_name,  
+            ai_trading: {  
+                signals,  
+                buy_analysis: {  
+                    trend_strength,  
+                    trend_direction,  
+                    risk_score,  
+                    buy_score,  
+                    latest_indicators  
+                },  
+                recommendations,  
+                current_position,  
+                statistics  
+            }  
+        }  
+    } = data;  
+
+    const latestSignal = signals[signals.length - 1];  
+    const firstSignal = signals[0];  
     
-    // 计算近期价格变化  
-    const priceChange = ((latestSignal.price - aiTrading.signals[0].price) / aiTrading.signals[0].price * 100).toFixed(2);  
-    
-    // 分析趋势强度和方向  
-    function getTrendStrengthDesc(strength) {  
-        if (strength >= 0.7) return "强";  
-        if (strength >= 0.4) return "中等";  
-        return "弱";  
-    }  
+    // 工具函数  
+    const utils = {  
+        formatPercent: (value) => (value * 100).toFixed(2) + '%',  
+        formatPrice: (price) => price.toFixed(2),  
+        
+        getTrendStrength: (strength) => {  
+            if (strength >= 0.7) return "极强";  
+            if (strength >= 0.5) return "强";  
+            if (strength >= 0.3) return "中等";  
+            return "弱";  
+        },  
 
-    // 分析MACD  
-    const macd = indicators.macd;  
-    const macdAnalysis = macd.histogram > 0   
-        ? `MACD柱状图为正(${macd.histogram.toFixed(4)})，显示上涨动能`   
-        : `MACD柱状图为负(${macd.histogram.toFixed(4)})，显示下跌压力`;  
+        getMACDAnalysis: (macd) => {  
+            const { histogram, macd: macdLine, signal } = macd;  
+            let analysis = [];  
+            
+            if (histogram > 0) {  
+                analysis.push(`MACD柱状图为正(${histogram.toFixed(4)})，显示上涨动能`);  
+                if (macdLine > signal) {  
+                    analysis.push("DIFF在DEA之上，趋势向好");  
+                }  
+            } else {  
+                analysis.push(`MACD柱状图为负(${histogram.toFixed(4)})，显示下跌压力`);  
+                if (macdLine < signal) {  
+                    analysis.push("DIFF在DEA之下，趋势偏弱");  
+                }  
+            }  
 
-    // 分析RSI  
-    function getRsiAnalysis(rsi) {  
-        if (rsi > 70) return "RSI处于超买区间，注意回调风险";  
-        if (rsi < 30) return "RSI处于超卖区间，可能存在反弹机会";  
-        if (rsi > 60) return "RSI偏强，上涨趋势健康";  
-        if (rsi < 40) return "RSI偏弱，下跌趋势明显";  
-        return "RSI处于中性区间，市场震荡";  
-    }  
+            return analysis.join("；");  
+        },  
 
-    // 分析布林带  
-    const boll = indicators.bollinger;  
-    function getBollAnalysis(boll) {  
-        if (boll.position > 1) return "股价突破布林带上轨，注意回调风险";  
-        if (boll.position < 0) return "股价跌破布林带下轨，可能超卖";  
-        if (boll.position > 0.5) return "股价位于布林带上部，走势偏强";  
-        if (boll.position < -0.5) return "股价位于布林带下部，走势偏弱";  
-        return "股价在布林带中轨附近，趋势不明确";  
-    }  
+        getBollAnalysis: (boll) => {  
+            const { position, bandwidth, upper, lower } = boll;  
+            let analysis = [];  
+            
+            if (position > 0.8) {  
+                analysis.push("股价接近布林带上轨，注意回调风险");  
+            } else if (position < -0.8) {  
+                analysis.push("股价接近布林带下轨，可能存在反弹机会");  
+            } else if (position > 0) {  
+                analysis.push("股价位于布林带上部，走势偏强");  
+            } else {  
+                analysis.push("股价位于布林带下部，走势偏弱");  
+            }  
+            
+            analysis.push(`带宽${bandwidth.toFixed(2)}，波动${bandwidth > 0.2 ? "较大" : "正常"}`);  
+            
+            return analysis.join("；");  
+        },  
 
-    // 生成支撑压力位  
-    const support = boll.lower.toFixed(2);  
-    const resistance = boll.upper.toFixed(2);  
+        getRsiAnalysis: (rsi) => {  
+            if (rsi > 70) return "RSI处于超买区间，注意回调风险";  
+            if (rsi < 30) return "RSI处于超卖区间，可能存在反弹机会";  
+            if (rsi > 60) return "RSI偏强，上涨趋势健康";  
+            if (rsi < 40) return "RSI偏弱，下跌趋势明显";  
+            return "RSI处于中性区间，市场震荡";  
+        }  
+    };  
 
-    // 生成市场分析文本  
-    const analysis = `  
-市场分析报告 - ${data.data.stock_code}  
+    // 计算价格变化  
+    const priceChange = ((latestSignal.price - firstSignal.price) / firstSignal.price * 100).toFixed(2);  
+
+    // 均线分析  
+    const maAnalysis = Object.entries(latest_indicators.ma_status).map(([period, value]) => {  
+        const diff = ((value - latestSignal.price) / latestSignal.price * 100).toFixed(2);  
+        const status = value > latestSignal.price ? '压力' : '支撑';  
+        return `MA${period}：${value.toFixed(2)} (${status}, 差距${Math.abs(diff)}%)`;  
+    });  
+
+    // 生成完整报告  
+    return `  
+市场分析报告 - ${stock_code} (${stock_name})  
 ------------------------  
-最新价格：${latestSignal.price}元 (${priceChange}%)  
+最新价格：${utils.formatPrice(latestSignal.price)}元 (${priceChange}%)  
+交易信号：${latestSignal.action} (置信度：${latestSignal.confidence})  
 
 趋势分析：  
-短期：${getTrendStrengthDesc(buyAnalysis.trend_strength.short_term)}势${buyAnalysis.trend_direction.short_term}  
-中期：${getTrendStrengthDesc(buyAnalysis.trend_strength.medium_term)}势${buyAnalysis.trend_direction.medium_term}  
-长期：${getTrendStrengthDesc(buyAnalysis.trend_strength.long_term)}势${buyAnalysis.trend_direction.long_term}  
+短期：${utils.getTrendStrength(trend_strength.short_term)}势 ${trend_direction.short_term}  
+中期：${utils.getTrendStrength(trend_strength.medium_term)}势 ${trend_direction.medium_term}  
+长期：${utils.getTrendStrength(trend_strength.long_term)}势 ${trend_direction.long_term}  
 
-技术指标：  
-1. ${macdAnalysis}  
-2. ${getRsiAnalysis(indicators.rsi)}  
-3. ${getBollAnalysis(boll)}  
+技术指标分析：  
+1. MACD：${utils.getMACDAnalysis(latest_indicators.macd)}  
+2. RSI：${utils.getRsiAnalysis(latest_indicators.rsi)}  
+3. 布林带：${utils.getBollAnalysis(latest_indicators.bollinger)}  
 
 关键价位：  
-- 压力位：${resistance}  
-- 支撑位：${support}  
+- 上轨：${utils.formatPrice(latest_indicators.bollinger.upper)}  
+- 中轨：${utils.formatPrice(latest_indicators.bollinger.middle)}  
+- 下轨：${utils.formatPrice(latest_indicators.bollinger.lower)}  
+
+均线系统：  
+${maAnalysis.join('\n')}  
 
 风险评估：  
-- 风险等级：${buyAnalysis.risk_score > 3 ? "高风险" : "低风险"} (${buyAnalysis.risk_score.toFixed(2)})  
-- 买入评分：${(buyAnalysis.buy_score * 100).toFixed(2)}%  
+- 风险等级：${risk_score > 3 ? "高风险" : "中低风险"} (${risk_score.toFixed(2)})  
+- 买入评分：${utils.formatPercent(buy_score)}  
+- 市场偏向：${recommendations.overall_market_bias}  
+- 风险等级：${recommendations.risk_level}  
+
+持仓状况：  
+- 当前持仓：${current_position.in_position ? "是" : "否"}  
+${current_position.in_position ? `- 入场价格：${current_position.entry_price}  
+- 持仓天数：${current_position.days_held}  
+- 当前收益：${current_position.current_profit}` : ""}  
+
+交易统计：  
+- 总信号数：${statistics.total_signals}  
+- 买入信号：${statistics.buy_signals}  
+- 卖出信号：${statistics.sell_signals}  
+- 高置信度信号：${statistics.high_confidence_signals}  
+- 完成交易：${statistics.completed_trades}  
+- 平均收益：${statistics.average_return}%  
+- 胜率：${statistics.win_rate}%  
 
 操作建议：  
-${aiTrading.recommendations.trading_advice}  
+${recommendations.trading_advice}  
 
 要点提示：  
-1. ${buyAnalysis.risk_score > 3 ? "注意控制仓位，严格执行止损" : "风险相对可控，可以适度参与"}  
-2. ${indicators.rsi > 70 || boll.position > 1 ? "当前位置存在回调风险" : indicators.rsi < 30 || boll.position < 0 ? "当前位置可能存在反弹机会" : "维持震荡，耐心等待机会"}  
-3. ${buyAnalysis.buy_score > 0.6 ? "可以考虑逢低买入" : buyAnalysis.buy_score < 0.4 ? "建议观望为主" : "可以少量试探性建仓"}  
-
-补充说明：  
-- 均线系统：${Object.entries(indicators.ma_status).some(([key, value]) => value > latestSignal.price) ? "部分均线形成压力" : "均线系统支撑明显"}  
-- 成交特点：${macd.histogram > 0 && indicators.rsi > 50 ? "量价配合良好" : "量能需要进一步确认"}  
-`;  
-
-    return analysis.trim();  
+1. ${risk_score > 3 ?   
+    "当前风险较高，建议谨慎操作" :   
+    "风险相对可控，可以根据策略参与"}  
+2. ${latest_indicators.rsi > 70 || latest_indicators.bollinger.position > 0.8 ?   
+    "技术指标显示超买，注意回调风险" :   
+    latest_indicators.rsi < 30 || latest_indicators.bollinger.position < -0.8 ?   
+    "技术指标显示超卖，可能存在反弹机会" :   
+    "技术指标处于中性区间，保持观察"}  
+3. ${buy_score > 0.6 ?   
+    "买入评分较高，可以考虑适量建仓" :   
+    buy_score < 0.4 ?   
+    "买入评分较低，建议观望" :   
+    "买入评分中性，可以少量试探"}  
+`.trim();  
 }
 // 获取股票数据  
 async function fetchStockData() {  
@@ -518,11 +696,7 @@ async function fetchStockData() {
     const loading = document.getElementById('loading');  
     
     // 验证股票代码  
-    if (!/^\d{6}$/.test(stockCode)) {  
-        errorMsg.textContent = '请输入6位数字的股票代码';  
-        errorMsg.classList.remove('hidden');  
-        return;  
-    }  
+   
 
     // 重置错误信息  
     errorMsg.classList.add('hidden');  
